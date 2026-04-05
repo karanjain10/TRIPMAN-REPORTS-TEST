@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kolarpimpri — Trip Reports</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --border: #e2e0d8;
+    --border-strong: #c8c5bb;
+    --text-primary: #1a1917;
+    --text-secondary: #6b6860;
+    --text-muted: #9b9890;
+    --accent: #1a3a5c;
+    --accent-light: #e8eef5;
+    --coal: #2d2d2d;
+    --softob: #e8a020;
+    --hardob: #c0392b;
+    --rehandling: #2980b9;
+    --shift-a: #27ae60;
+    --shift-b: #8e44ad;
+    --shift-c: #e67e22;
+    --sidebar-w: 220px;
+    --font-main: 'DM Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-main);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+  }
+
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 48px 40px;
+    width: 380px;
+  }
+
+  .login-logo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .login-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 32px;
+    line-height: 1.3;
+  }
+
+  .login-field {
+    margin-bottom: 16px;
+  }
+
+  .login-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .login-field input {
+    width: 100%;
+    height: 42px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 0 12px;
+    font-family: var(--font-main);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .login-field input:focus { border-color: var(--accent); }
+
+  .login-btn {
+    width: 100%;
+    height: 42px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-main);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.15s;
+  }
+
+  .login-btn:hover { opacity: 0.88; }
+  .login-error { color: #c0392b; font-size: 13px; margin-top: 12px; text-align: center; min-height: 20px; }
+
+  /* APP SHELL */
+  #app { display: none; min-height: 100vh; }
+
+  .topbar {
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-logo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-right: 8px;
+  }
+
+  .topbar-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    flex: 1;
+  }
+
+  .topbar-user {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .topbar-logout {
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .topbar-logout:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+  .main-layout {
+    display: flex;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .filter-section { margin-bottom: 24px; }
+
+  .filter-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .filter-chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .filter-chip {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-secondary);
+    background: transparent;
+    user-select: none;
+  }
+
+  .filter-chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .chip-coal.active { background: var(--coal); border-color: var(--coal); }
+  .chip-softob.active { background: var(--softob); border-color: var(--softob); }
+  .chip-hardob.active { background: var(--hardob); border-color: var(--hardob); }
+  .chip-rehandling.active { background: var(--rehandling); border-color: var(--rehandling); }
+  .chip-shift-a.active { background: var(--shift-a); border-color: var(--shift-a); }
+  .chip-shift-b.active { background: var(--shift-b); border-color: var(--shift-b); }
+  .chip-shift-c.active { background: var(--shift-c); border-color: var(--shift-c); }
+
+  .sidebar-search {
+    width: 100%;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0 10px;
+    font-size: 13px;
+    font-family: var(--font-main);
+    color: var(--text-primary);
+    background: var(--bg);
+    outline: none;
+    margin-bottom: 8px;
+  }
+  .sidebar-search:focus { border-color: var(--border-strong); }
+
+  .sidebar-list { max-height: 160px; overflow-y: auto; }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 4px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 5px;
+    color: var(--text-secondary);
+    user-select: none;
+    transition: background 0.1s;
+  }
+  .sidebar-item:hover { background: var(--bg); color: var(--text-primary); }
+
+  .sidebar-item input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+
+  .sidebar-clear {
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: underline;
+    margin-top: 6px;
+    display: inline-block;
+  }
+  .sidebar-clear:hover { color: var(--text-secondary); }
+
+  /* CONTENT */
+  .content { flex: 1; padding: 24px; overflow: hidden; }
+
+  /* DATE ROW */
+  .date-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .date-btn {
+    height: 34px;
+    padding: 0 16px;
+    border-radius: 7px;
+    border: 1.5px solid var(--border);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-secondary);
+    background: var(--surface);
+    font-family: var(--font-main);
+  }
+  .date-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .date-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .date-custom-row {
+    display: none;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .date-custom-row.visible { display: flex; }
+
+  .date-input {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 13px;
+    font-family: var(--font-main);
+    color: var(--text-primary);
+    background: var(--surface);
+    outline: none;
+  }
+  .date-input:focus { border-color: var(--accent); }
+
+  .apply-btn {
+    height: 34px;
+    padding: 0 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-main);
+  }
+
+  /* STAT CARDS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .stat-total .stat-value { color: var(--accent); }
+  .stat-coal .stat-value { color: var(--coal); }
+  .stat-softob .stat-value { color: var(--softob); }
+  .stat-hardob .stat-value { color: var(--hardob); }
+  .stat-rehandling .stat-value { color: var(--rehandling); }
+
+  /* ACTION BAR */
+  .action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .result-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .result-count strong { color: var(--text-primary); }
+
+  .action-btns { display: flex; gap: 8px; }
+
+  .action-btn {
+    height: 34px;
+    padding: 0 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-secondary);
+    background: var(--surface);
+    font-family: var(--font-main);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .action-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .action-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .action-btn.primary:hover { opacity: 0.88; }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .table-scroll { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead tr {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--text-primary); }
+
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg); }
+
+  tbody td {
+    padding: 10px 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  .td-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .mat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .mat-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  .mat-coal { background: #f0f0f0; color: #2d2d2d; }
+  .mat-coal .mat-dot { background: var(--coal); }
+  .mat-softob { background: #fef6e7; color: #7a5000; }
+  .mat-softob .mat-dot { background: var(--softob); }
+  .mat-hardob { background: #fdecea; color: #8b1a1a; }
+  .mat-hardob .mat-dot { background: var(--hardob); }
+  .mat-rehandling { background: #e8f4fb; color: #1a4a6b; }
+  .mat-rehandling .mat-dot { background: var(--rehandling); }
+
+  .shift-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+
+  .shift-A { background: #eafaf1; color: #1e8449; }
+  .shift-B { background: #f5eef8; color: #6c3483; }
+  .shift-C { background: #fef5e7; color: #935116; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state svg { margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 14px; }
+
+  /* PAGINATION */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .page-btns { display: flex; gap: 4px; }
+
+  .page-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-family: var(--font-main);
+    transition: all 0.1s;
+  }
+  .page-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* LOADING */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(245, 244, 240, 0.7);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  .loading-overlay.visible { display: flex; }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--accent);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* EXPORT DROPDOWN */
+  .export-wrap { position: relative; }
+  .export-menu {
+    display: none;
+    position: absolute;
+    top: 38px;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    z-index: 200;
+    min-width: 150px;
+    overflow: hidden;
+  }
+  .export-menu.open { display: block; }
+  .export-menu-item {
+    padding: 10px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .export-menu-item:hover { background: var(--bg); }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .sidebar { width: 180px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Kolarpimpri Mining</div>
+    <div class="login-title">Trip Reports<br>Dashboard</div>
+    <div class="login-field">
+      <label>Worker ID</label>
+      <input type="text" id="login-id" placeholder="Enter your worker ID" autocomplete="off" />
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter your password" />
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">KM</div>
+    <div class="topbar-title">Trip Reports</div>
+    <div class="topbar-user">
+      <span id="topbar-username"></span>
+      <span class="topbar-logout" onclick="doLogout()">Sign out</span>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <!-- SHIFT -->
+      <div class="filter-section">
+        <div class="filter-label">Shift</div>
+        <div class="filter-chip-group">
+          <div class="filter-chip chip-shift-a" data-type="shift" data-val="A">Shift A</div>
+          <div class="filter-chip chip-shift-b" data-type="shift" data-val="B">Shift B</div>
+          <div class="filter-chip chip-shift-c" data-type="shift" data-val="C">Shift C</div>
+        </div>
+      </div>
+
+      <!-- MATERIAL -->
+      <div class="filter-section">
+        <div class="filter-label">Material</div>
+        <div class="filter-chip-group">
+          <div class="filter-chip chip-coal" data-type="material" data-val="Coal">Coal</div>
+          <div class="filter-chip chip-softob" data-type="material" data-val="Soft OB">Soft OB</div>
+          <div class="filter-chip chip-hardob" data-type="material" data-val="Hard OB">Hard OB</div>
+          <div class="filter-chip chip-rehandling" data-type="material" data-val="Rehandling">Rehandling</div>
+        </div>
+      </div>
+
+      <!-- VEHICLE -->
+      <div class="filter-section">
+        <div class="filter-label">Vehicle</div>
+        <input class="sidebar-search" type="text" id="vehicle-search" placeholder="Search..." oninput="filterSidebarList('vehicle')" />
+        <div class="sidebar-list" id="vehicle-list"></div>
+        <span class="sidebar-clear" onclick="clearListFilter('vehicle')">Clear</span>
+      </div>
+
+      <!-- DRIVER -->
+      <div class="filter-section">
+        <div class="filter-label">Driver</div>
+        <input class="sidebar-search" type="text" id="driver-search" placeholder="Search..." oninput="filterSidebarList('driver')" />
+        <div class="sidebar-list" id="driver-list"></div>
+        <span class="sidebar-clear" onclick="clearListFilter('driver')">Clear</span>
+      </div>
+
+      <!-- SUPERVISOR -->
+      <div class="filter-section">
+        <div class="filter-label">Supervisor</div>
+        <input class="sidebar-search" type="text" id="supervisor-search" placeholder="Search..." oninput="filterSidebarList('supervisor')" />
+        <div class="sidebar-list" id="supervisor-list"></div>
+        <span class="sidebar-clear" onclick="clearListFilter('supervisor')">Clear</span>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <!-- DATE ROW -->
+      <div class="date-row">
+        <button class="date-btn active" data-range="today" onclick="setDateRange('today', this)">Today</button>
+        <button class="date-btn" data-range="7" onclick="setDateRange('7', this)">7 Days</button>
+        <button class="date-btn" data-range="30" onclick="setDateRange('30', this)">30 Days</button>
+        <button class="date-btn" data-range="custom" onclick="setDateRange('custom', this)">Custom</button>
+        <button class="action-btn" onclick="refreshData()" style="margin-left:auto;" title="Refresh">↻ Refresh</button>
+      </div>
+
+      <div class="date-custom-row" id="custom-row">
+        <input type="date" class="date-input" id="date-from" />
+        <span style="color: var(--text-muted); font-size: 13px;">to</span>
+        <input type="date" class="date-input" id="date-to" />
+        <button class="apply-btn" onclick="applyCustomRange()">Apply</button>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-card stat-total">
+          <div class="stat-label">Total Trips</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card stat-coal">
+          <div class="stat-label">Coal</div>
+          <div class="stat-value" id="stat-coal">0</div>
+        </div>
+        <div class="stat-card stat-softob">
+          <div class="stat-label">Soft OB</div>
+          <div class="stat-value" id="stat-softob">0</div>
+        </div>
+        <div class="stat-card stat-hardob">
+          <div class="stat-label">Hard OB</div>
+          <div class="stat-value" id="stat-hardob">0</div>
+        </div>
+        <div class="stat-card stat-rehandling">
+          <div class="stat-label">Rehandling</div>
+          <div class="stat-value" id="stat-rehandling">0</div>
+        </div>
+      </div>
+
+      <!-- ACTION BAR -->
+      <div class="action-bar">
+        <div class="result-count" id="result-count">Loading trips...</div>
+        <div class="action-btns">
+          <div class="export-wrap">
+            <button class="action-btn primary" onclick="toggleExportMenu()">↓ Export</button>
+            <div class="export-menu" id="export-menu">
+              <div class="export-menu-item" onclick="exportCSV()">
+                <span>📄</span> Export as CSV
+              </div>
+              <div class="export-menu-item" onclick="exportExcel()">
+                <span>📊</span> Export as Excel
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortBy('#')">#</th>
+                <th onclick="sortBy('date')">Date & Time ↕</th>
+                <th onclick="sortBy('vehicle')">Vehicle</th>
+                <th onclick="sortBy('plate')">Number Plate</th>
+                <th onclick="sortBy('material')">Material</th>
+                <th onclick="sortBy('shift')">Shift</th>
+                <th onclick="sortBy('driver')">Driver</th>
+                <th onclick="sortBy('supervisor')">Supervisor</th>
+              </tr>
+            </thead>
+            <tbody id="trips-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination" id="pagination-bar">
+          <div id="page-info" style="font-size: 13px; color: var(--text-secondary);"></div>
+          <div class="page-btns" id="page-btns"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://mining-trips-hub.emergentapp.com/api';
+let currentUser = null;
+let allTrips = [];
+let filteredTrips = [];
+let allVehicles = [];
+let allDrivers = [];
+let allWorkers = [];
+let currentPage = 1;
+const PAGE_SIZE = 50;
+let sortField = 'date';
+let sortDir = -1;
+
+let activeFilters = {
+  shifts: new Set(),
+  materials: new Set(),
+  vehicles: new Set(),
+  drivers: new Set(),
+  supervisors: new Set()
+};
+
+let dateRange = { type: 'today', from: null, to: null };
+
+async function doLogin() {
+  const worker_id = document.getElementById('login-id').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!worker_id || !password) { errEl.textContent = 'Please enter both fields.'; return; }
+  showLoading(true);
+  try {
+    const res = await fetch(`${API}/workers/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ worker_id, password })
+    });
+    if (!res.ok) { errEl.textContent = 'Invalid credentials. Try again.'; showLoading(false); return; }
+    const data = await res.json();
+    currentUser = data;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('topbar-username').textContent = data.name || worker_id;
+    initApp();
+  } catch (e) {
+    errEl.textContent = 'Connection error. Check your network.';
+  }
+  showLoading(false);
+}
+
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-id').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function doLogout() {
+  currentUser = null;
+  allTrips = [];
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+async function initApp() {
+  showLoading(true);
+  await Promise.all([loadVehicles(), loadDrivers(), loadWorkers()]);
+  await loadTrips();
+  showLoading(false);
+}
+
+async function loadVehicles() {
+  try {
+    const res = await fetch(`${API}/vehicles`);
+    allVehicles = await res.json();
+    renderSidebarList('vehicle', allVehicles.map(v => ({ id: v._id, label: v.vehicle_number })));
+  } catch(e) {}
+}
+
+async function loadDrivers() {
+  try {
+    const res = await fetch(`${API}/drivers`);
+    allDrivers = await res.json();
+    renderSidebarList('driver', allDrivers.map(d => ({ id: d._id, label: d.name })));
+  } catch(e) {}
+}
+
+async function loadWorkers() {
+  try {
+    const res = await fetch(`${API}/workers`);
+    allWorkers = await res.json();
+    renderSidebarList('supervisor', allWorkers.map(w => ({ id: w._id, label: w.name })));
+  } catch(e) {}
+}
+
+async function loadTrips() {
+  showLoading(true);
+  try {
+    const params = buildDateParams();
+    const url = `${API}/trips?${params}&limit=5000`;
+    const res = await fetch(url);
+    const data = await res.json();
+    allTrips = Array.isArray(data) ? data : (data.trips || []);
+    applyFilters();
+  } catch(e) {
+    showToast('Failed to load trips. Check connection.');
+  }
+  showLoading(false);
+}
+
+function buildDateParams() {
+  const p = new URLSearchParams();
+  const now = new Date();
+  if (dateRange.type === 'today') {
+    const d = now.toISOString().split('T')[0];
+    p.set('start_date', d);
+    p.set('end_date', d);
+  } else if (dateRange.type === '7') {
+    const from = new Date(now); from.setDate(from.getDate() - 6);
+    p.set('start_date', from.toISOString().split('T')[0]);
+    p.set('end_date', now.toISOString().split('T')[0]);
+  } else if (dateRange.type === '30') {
+    const from = new Date(now); from.setDate(from.getDate() - 29);
+    p.set('start_date', from.toISOString().split('T')[0]);
+    p.set('end_date', now.toISOString().split('T')[0]);
+  } else if (dateRange.type === 'custom' && dateRange.from && dateRange.to) {
+    p.set('start_date', dateRange.from);
+    p.set('end_date', dateRange.to);
+  }
+  return p.toString();
+}
+
+function applyFilters() {
+  filteredTrips = allTrips.filter(t => {
+    if (activeFilters.shifts.size > 0 && !activeFilters.shifts.has(t.shift)) return false;
+    if (activeFilters.materials.size > 0 && !activeFilters.materials.has(t.material_type)) return false;
+    if (activeFilters.vehicles.size > 0 && !activeFilters.vehicles.has(t.vehicle_id)) return false;
+    if (activeFilters.drivers.size > 0 && !activeFilters.drivers.has(t.driver_id)) return false;
+    if (activeFilters.supervisors.size > 0 && !activeFilters.supervisors.has(t.worker_id)) return false;
+    return true;
+  });
+
+  filteredTrips.sort((a, b) => {
+    let va, vb;
+    if (sortField === 'date') { va = new Date(a.timestamp); vb = new Date(b.timestamp); }
+    else { va = 0; vb = 0; }
+    return sortDir * (va > vb ? 1 : va < vb ? -1 : 0);
+  });
+
+  updateStats();
+  currentPage = 1;
+  renderTable();
+}
+
+function updateStats() {
+  const totals = { Coal: 0, 'Soft OB': 0, 'Hard OB': 0, Rehandling: 0 };
+  filteredTrips.forEach(t => { if (totals[t.material_type] !== undefined) totals[t.material_type]++; });
+  document.getElementById('stat-total').textContent = filteredTrips.length;
+  document.getElementById('stat-coal').textContent = totals['Coal'];
+  document.getElementById('stat-softob').textContent = totals['Soft OB'];
+  document.getElementById('stat-hardob').textContent = totals['Hard OB'];
+  document.getElementById('stat-rehandling').textContent = totals['Rehandling'];
+  document.getElementById('result-count').innerHTML = `Showing <strong>${filteredTrips.length}</strong> trip${filteredTrips.length !== 1 ? 's' : ''}`;
+}
+
+function getVehicleNum(id) {
+  const v = allVehicles.find(x => x._id === id);
+  return v ? v.vehicle_number : id || '—';
+}
+
+function getVehiclePlate(id) {
+  const v = allVehicles.find(x => x._id === id);
+  return v ? v.number_plate : '—';
+}
+
+function getDriverName(id) {
+  const d = allDrivers.find(x => x._id === id);
+  return d ? d.name : id || '—';
+}
+
+function getWorkerName(id) {
+  const w = allWorkers.find(x => x._id === id);
+  return w ? w.name : id || '—';
+}
+
+function fmtDate(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function matBadge(m) {
+  const map = {
+    'Coal': 'coal',
+    'Soft OB': 'softob',
+    'Hard OB': 'hardob',
+    'Rehandling': 'rehandling'
+  };
+  const cls = map[m] || 'coal';
+  return `<span class="mat-badge mat-${cls}"><span class="mat-dot"></span>${m}</span>`;
+}
+
+function shiftBadge(s) {
+  return `<span class="shift-badge shift-${s}">${s}</span>`;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('trips-tbody');
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = filteredTrips.slice(start, start + PAGE_SIZE);
+
+  if (filteredTrips.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      <p>No trips found for the selected filters</p></div></td></tr>`;
+    renderPagination();
+    return;
+  }
+
+  tbody.innerHTML = page.map((t, i) => `
+    <tr>
+      <td class="td-num">${start + i + 1}</td>
+      <td style="font-size:12px; color: var(--text-secondary);">${fmtDate(t.timestamp)}</td>
+      <td style="font-weight:500;">${getVehicleNum(t.vehicle_id)}</td>
+      <td style="font-family: var(--font-mono); font-size:12px;">${getVehiclePlate(t.vehicle_id)}</td>
+      <td>${matBadge(t.material_type)}</td>
+      <td>${shiftBadge(t.shift)}</td>
+      <td>${getDriverName(t.driver_id)}</td>
+      <td style="color: var(--text-secondary);">${getWorkerName(t.worker_id)}</td>
+    </tr>
+  `).join('');
+
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = filteredTrips.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = (currentPage - 1) * PAGE_SIZE + 1;
+  const end = Math.min(currentPage * PAGE_SIZE, total);
+
+  document.getElementById('page-info').textContent = total > 0
+    ? `${start}–${end} of ${total}`
+    : '';
+
+  const container = document.getElementById('page-btns');
+  if (pages <= 1) { container.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+
+  for (let p = 1; p <= pages; p++) {
+    if (pages > 7) {
+      if (p !== 1 && p !== pages && Math.abs(p - currentPage) > 2) {
+        if (p === 2 || p === pages - 1) html += `<span style="padding: 0 4px; color: var(--text-muted);">…</span>`;
+        continue;
+      }
+    }
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+  }
+
+  html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === pages ? 'disabled' : ''}>›</button>`;
+  container.innerHTML = html;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(filteredTrips.length / PAGE_SIZE);
+  if (p < 1 || p > pages) return;
+  currentPage = p;
+  renderTable();
+  document.querySelector('.content').scrollTop = 0;
+}
+
+function sortBy(field) {
+  if (sortField === field) sortDir *= -1;
+  else { sortField = field; sortDir = -1; }
+  applyFilters();
+}
+
+// DATE RANGE
+function setDateRange(type, btn) {
+  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  dateRange.type = type;
+  const customRow = document.getElementById('custom-row');
+  if (type === 'custom') { customRow.classList.add('visible'); return; }
+  customRow.classList.remove('visible');
+  loadTrips();
+}
+
+function applyCustomRange() {
+  const from = document.getElementById('date-from').value;
+  const to = document.getElementById('date-to').value;
+  if (!from || !to) { showToast('Select both dates.'); return; }
+  dateRange.from = from;
+  dateRange.to = to;
+  loadTrips();
+}
+
+async function refreshData() {
+  await loadTrips();
+  showToast('Data refreshed');
+}
+
+// SIDEBAR LISTS
+function renderSidebarList(type, items) {
+  const listEl = document.getElementById(`${type}-list`);
+  listEl.innerHTML = items.map(item => `
+    <div class="sidebar-item" onclick="toggleListFilter('${type}', '${item.id}', this)">
+      <input type="checkbox" id="chk-${type}-${item.id}" />
+      <span>${item.label}</span>
+    </div>
+  `).join('');
+}
+
+function filterSidebarList(type) {
+  const q = document.getElementById(`${type}-search`).value.toLowerCase();
+  document.querySelectorAll(`#${type}-list .sidebar-item`).forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function toggleListFilter(type, id, el) {
+  const chk = el.querySelector('input');
+  const key = type === 'vehicle' ? 'vehicles' : type === 'driver' ? 'drivers' : 'supervisors';
+  if (activeFilters[key].has(id)) {
+    activeFilters[key].delete(id);
+    chk.checked = false;
+  } else {
+    activeFilters[key].add(id);
+    chk.checked = true;
+  }
+  applyFilters();
+}
+
+function clearListFilter(type) {
+  const key = type === 'vehicle' ? 'vehicles' : type === 'driver' ? 'drivers' : 'supervisors';
+  activeFilters[key].clear();
+  document.querySelectorAll(`#${type}-list input`).forEach(c => c.checked = false);
+  applyFilters();
+}
+
+// CHIP FILTERS
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const type = chip.dataset.type;
+    const val = chip.dataset.val;
+    const key = type === 'shift' ? 'shifts' : 'materials';
+    if (activeFilters[key].has(val)) {
+      activeFilters[key].delete(val);
+      chip.classList.remove('active');
+    } else {
+      activeFilters[key].add(val);
+      chip.classList.add('active');
+    }
+    applyFilters();
+  });
+});
+
+// EXPORT
+function toggleExportMenu() {
+  document.getElementById('export-menu').classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.export-wrap')) {
+    document.getElementById('export-menu').classList.remove('open');
+  }
+});
+
+function tripsToRows() {
+  return filteredTrips.map((t, i) => ({
+    '#': i + 1,
+    'Date': t.mining_date || (t.timestamp ? t.timestamp.split('T')[0] : ''),
+    'Time': t.timestamp ? new Date(t.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+    'Vehicle': getVehicleNum(t.vehicle_id),
+    'Number Plate': getVehiclePlate(t.vehicle_id),
+    'Material': t.material_type,
+    'Shift': t.shift,
+    'Driver': getDriverName(t.driver_id),
+    'Supervisor': getWorkerName(t.worker_id)
+  }));
+}
+
+function exportCSV() {
+  document.getElementById('export-menu').classList.remove('open');
+  const rows = tripsToRows();
+  if (!rows.length) { showToast('No trips to export'); return; }
+  const headers = Object.keys(rows[0]);
+  const csv = [headers.join(','), ...rows.map(r => headers.map(h => `"${r[h]}"`).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `kolarpimpri_trips_${Date.now()}.csv`;
+  a.click();
+  showToast('CSV downloaded');
+}
+
+function exportExcel() {
+  document.getElementById('export-menu').classList.remove('open');
+  const rows = tripsToRows();
+  if (!rows.length) { showToast('No trips to export'); return; }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{ wch: 5 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 8 }, { wch: 18 }, { wch: 16 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'Trips');
+  XLSX.writeFile(wb, `kolarpimpri_trips_${Date.now()}.xlsx`);
+  showToast('Excel downloaded');
+}
+
+function showLoading(v) {
+  document.getElementById('loading').classList.toggle('visible', v);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
